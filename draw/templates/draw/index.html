@@ -28,8 +28,33 @@
     // getting the URL (you may want to use for Exercise 3)
     var url = window.location.href;
 
-    // var socket = new WebSocket(
-    //     'ws://your url here:8765/');
+    var socket = new WebSocket(
+         'ws://p4-mjiachan-mjiachan854394.codeanyapp.com:8765/');
+  
+    var p = new paper.Path();
+    p.strokeColor = 'black';
+    
+    
+    // add a point to path every time
+    tool.onMouseMove = function(event) {
+      p.add(event.point);
+      socket.send(JSON.stringify({x: event.point.x, y: event.point.y, id: clientID}));
+          //p.strokeColor = 'black';
+    }
+  
+    var p2 = new paper.Path();
+    socket.onmessage = function(receivedMessage) {
+      var test = JSON.parse(receivedMessage.data);
+      
+      p2.strokeColor = 'black';
+      p2.add(new paper.Point(test.x, test.y));
+      
+      
+    }
+  
+    
+  
+  
 
 
 </script>
