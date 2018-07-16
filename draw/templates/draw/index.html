@@ -28,6 +28,9 @@
     <div id="container">
         <!-- You may change the dimensions of this canvas -->
         <canvas id="myCanvas"></canvas>
+      <!--exercise 2 change color -->
+        <div id = "box" style = "background-color:blue; width:100px; height:100px; position:absolute; top:10px;">
+
     </div>
     <p id="msg"></p>
 </body>
@@ -54,16 +57,6 @@
             this.color = myColor;
             this.path = myPath;
         }
-        
-//         setColor() {
-//             return new paper.Color(Math.random(), Math.random(), Math.random());
-//         }
-        
-//         setPath() {
-//             var myPath = new paper.Path();
-//             myPath.strokeColor = this.color;
-//             return myPath;
-//         }
         
         getID() {
             return this.id;
@@ -104,62 +97,45 @@
         }
         
         addUser(client) {
-            clientID = client.getID();
+            var clientID = client.getID();
             this.users[clientID] = client;
         }
     }
     
-    users = new Users();
+    // Central System that keeps track of every Client
+    var users = new Users();
     
-    myID = Math.floor(Math.random() * 1000000000);
-    myColor = new paper.Color(Math.random(), Math.random(), Math.random());
+    var myID = Math.floor(Math.random() * 1000000000);
+    var myColor = new paper.Color(Math.random(), Math.random(), Math.random());
     var myPath = new paper.Path();
     myPath.strokeColor = myColor;
     
-    mySelf = new Client(myID, myColor, myPath);
+    var mySelf = new Client(myID, myColor, myPath);
     users.addUser(mySelf);
 
     // Add a point to path every time
     tool.onMouseMove = function(event) {
-//         users.addPointToClient(myID, event.point.x, event.point.y);
         myPath.add(event.point);
         textItem.content = "Drawing Color: " + myPath.strokeColor;
-        socket.send(JSON.stringify({userID: myID, userColor: myColor, point: event.point}));
+        socket.send(JSON.stringify({userID: myID, userColor: myColor, x: event.point.x, y: event.point.y}));
     }
     
-//     var drawPaths = {};
     socket.onmessage = function(event) {
         var msg = JSON.parse(event.data);
-        userID = msg.userID;
-        userColor = msg.userColor;
+        var userID = msg.userID;
+        var userColor = new paper.Color(msg.userColor[1], msg.userColor[2], msg.userColor[3]);
         
         if (!users.hasUser(userID)) {
             var pathDraw = new paper.Path();
             pathDraw.strokeColor = userColor;
-            pathDraw.add(new paper.Point(msg.point.x, msg.point.y)); 
-            users.addUser()
+            pathDraw.add(new paper.Point(msg.x, msg.y)); 
+            users.addUser(new Client(userID, userColor, pathDraw));
             
-            textItem.content = "Receive Color 1-1: " + userColor + "\n" + "Receive Color 1-2: " + pathDraw.strokeColor;
-            user.saveClient(userID);
+//             textItem.content = "Receive Color 1-1: " + userColor + "\n" + "Receive Color 1-2: " + pathDraw.strokeColor;
         }
-        else if (userID != user.myID()) {
-            paper.project.activeLayer.children[toString(userID)].strokeColor = userColor;
-            paper.project.activeLayer.children[toString(userID)].add(new paper.Point(msg.point.x, msg.point.y));
-            var copy = paper.project.activeLayer.children[userID];
-            textItem.content = "Receive Color 2-1: " + userColor + "\n" + "Receive Color 2-2: " + copy.strokeColor;
-  
-            
-//             var pathDraw = drawPaths[userID];
-//             pathDraw.fullySelected = true;
-//             pathDraw.strokeColor = userColor;
-//             pathDraw.add(new paper.Point(msg.x, msg.y)); 
-//             pathDraw.selected = false;
-//             drawPaths[userID] = pathDraw;
-//             textItem.content = "Receive Color 2-1: " + userColor + "\n" + "Receive Color 2-2: " + pathDraw.strokeColor;
-            
-//             drawPaths[userID].strokeColor = userColor;
-//             drawPaths[userID].add(new paper.Point(msg.x, msg.y));
-//             textItem.content = "Receive Color 2: " + drawPaths[userID].strokeColor;
+        else if (userID != myID) { // Avoid mySelf's path (duplicate)
+            users.addPointToClient(userID, msg.x, msg.y);
+//             textItem.content = "Receive Color 2-1: " + userColor + "\n" + "Receive Color 2-2: " + users.getUser(userID).getPath();
         }
     }
     
@@ -192,19 +168,25 @@
   
   
   
-    var x= 0;
+      var x = 0;
+  if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', function(event) {
-      x = event.gamma;
-      if (x > 15) {
-        alert('tilt');
-    
-    }}, false);
+      setInterval(function() {
+        x = event.gamma;
+        if (x > 0) {
+          document.getElementById("box").style.backgroundColor = "black";
+          alert('tilt');
+        }
+    }, 50);  
+     
+    }, false);
+} else {
+    console.log('This device does not support deviceorientation');
+}
+
   
-    /**setInterval(function() {
-      if (x > 15) {
-        alert('tilt');
-      }
-    }, 100);   */
+  
+  
   
     
    
