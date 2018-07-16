@@ -11,12 +11,25 @@
     <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
 
     <style type="text/css">
+        #container {
+            text-align: center;
+        }
+        
+        #myCanvas {
+            margin-top: 100px;
+            height: 750px;
+            width: 750px;
+            border: 1px solid blue;
+        }  
     </style>
 
 </head>
 <body>
-    <!-- You may change the dimensions of this canvas -->
-    <canvas id="myCanvas" width="750px" height="750px"></canvas>
+    <div id="container">
+        <!-- You may change the dimensions of this canvas -->
+        <canvas id="myCanvas"></canvas>
+    </div>
+    <p id="msg"></p>
 </body>
 <script>
 
@@ -27,30 +40,174 @@
 
     // getting the URL (you may want to use for Exercise 3)
     var url = window.location.href;
+    var socket = new WebSocket('ws://p4-mjiachan-mjiachan854394.codeanyapp.com:8765/');
+    
+    // Set BroadCast
+    var textItem = new paper.PointText(new paper.Point(20, 30));
+    textItem.fillColor = 'black';
+    textItem.content = 'Here is BroadCast Board';
+    
+    // Define Client Info Object
+    class Client {
+        constructor(myID, myColor, myPath) {
+            this.id = myID;
+            this.color = myColor;
+            this.path = myPath;
+        }
+        
+//         setColor() {
+//             return new paper.Color(Math.random(), Math.random(), Math.random());
+//         }
+        
+//         setPath() {
+//             var myPath = new paper.Path();
+//             myPath.strokeColor = this.color;
+//             return myPath;
+//         }
+        
+        getID() {
+            return this.id;
+        }
+        
+        getColor() {
+            return this.color;
+        }
+        
+        getPath() {
+            return this.path;
+        }
+        
+        addPoint(x, y) {
+            this.path.add(new paper.Point(x, y));
+        }
+    }
+    
+    // Define Clients Tracking
+    class Users {
+        constructor() {
+            this.users = {};
+        }
+        
+        getUser(clientID) {
+            return this.users[clientID];
+        }
+        
+        addPointToClient(clientID, x, y) {
+            this.users[clientID].addPoint(x, y);
+        }
+        
+        hasUser(clientID) {
+            if (this.users[clientID] != undefined) {
+                return true;
+            }
+            return false;
+        }
+        
+        addUser(client) {
+            clientID = client.getID();
+            this.users[clientID] = client;
+        }
+    }
+    
+    users = new Users();
+    
+    myID = Math.floor(Math.random() * 1000000000);
+    myColor = new paper.Color(Math.random(), Math.random(), Math.random());
+    var myPath = new paper.Path();
+    myPath.strokeColor = myColor;
+    
+    mySelf = new Client(myID, myColor, myPath);
+    users.addUser(mySelf);
 
-    var socket = new WebSocket(
-         'ws://p4-mjiachan-mjiachan854394.codeanyapp.com:8765/');
-  
-    var p = new paper.Path();
-    p.strokeColor = 'black';
-    
-    
-    // add a point to path every time
+    // Add a point to path every time
     tool.onMouseMove = function(event) {
-      p.add(event.point);
-      socket.send(JSON.stringify({x: event.point.x, y: event.point.y, id: clientID}));
-          //p.strokeColor = 'black';
+//         users.addPointToClient(myID, event.point.x, event.point.y);
+        myPath.add(event.point);
+        textItem.content = "Drawing Color: " + myPath.strokeColor;
+        socket.send(JSON.stringify({userID: myID, userColor: myColor, point: event.point}));
     }
+    
+//     var drawPaths = {};
+    socket.onmessage = function(event) {
+        var msg = JSON.parse(event.data);
+        userID = msg.userID;
+        userColor = msg.userColor;
+        
+        if (!users.hasUser(userID)) {
+            var pathDraw = new paper.Path();
+            pathDraw.strokeColor = userColor;
+            pathDraw.add(new paper.Point(msg.point.x, msg.point.y)); 
+            users.addUser()
+            
+            textItem.content = "Receive Color 1-1: " + userColor + "\n" + "Receive Color 1-2: " + pathDraw.strokeColor;
+            user.saveClient(userID);
+        }
+        else if (userID != user.myID()) {
+            paper.project.activeLayer.children[toString(userID)].strokeColor = userColor;
+            paper.project.activeLayer.children[toString(userID)].add(new paper.Point(msg.point.x, msg.point.y));
+            var copy = paper.project.activeLayer.children[userID];
+            textItem.content = "Receive Color 2-1: " + userColor + "\n" + "Receive Color 2-2: " + copy.strokeColor;
   
-    var p2 = new paper.Path();
-    socket.onmessage = function(receivedMessage) {
-      var test = JSON.parse(receivedMessage.data);
-      
-      p2.strokeColor = 'black';
-      p2.add(new paper.Point(test.x, test.y));
-      
-      
+            
+//             var pathDraw = drawPaths[userID];
+//             pathDraw.fullySelected = true;
+//             pathDraw.strokeColor = userColor;
+//             pathDraw.add(new paper.Point(msg.x, msg.y)); 
+//             pathDraw.selected = false;
+//             drawPaths[userID] = pathDraw;
+//             textItem.content = "Receive Color 2-1: " + userColor + "\n" + "Receive Color 2-2: " + pathDraw.strokeColor;
+            
+//             drawPaths[userID].strokeColor = userColor;
+//             drawPaths[userID].add(new paper.Point(msg.x, msg.y));
+//             textItem.content = "Receive Color 2: " + drawPaths[userID].strokeColor;
+        }
     }
+    
+    //exercise 2
+    var sensitivity = 15;
+    var x1 = 0, y1 = 0, z1 = 0, x2 = 0, y2 = 0, z2 = 0;
+
+    // Listen to motion events and update the position
+    window.addEventListener('devicemotion', function (event) {
+        x1 = event.accelerationIncludingGravity.x;
+        y1 = event.accelerationIncludingGravity.y;
+        z1 = event.accelerationIncludingGravity.z;
+    }, false);
+
+
+    setInterval(function () {
+        var change = Math.abs(x1-x2+y1-y2+z1-z2);
+
+        if (change > sensitivity) {
+            const context = canvas.getContext('2d');
+
+             context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Update new position
+        x2 = x1;
+        y2 = y1;
+        z2 = z1;
+    }, 150);
+  
+  
+  
+    var x= 0;
+    window.addEventListener('deviceorientation', function(event) {
+      x = event.gamma;
+      if (x > 15) {
+        alert('tilt');
+    
+    }}, false);
+  
+    /**setInterval(function() {
+      if (x > 15) {
+        alert('tilt');
+      }
+    }, 100);   */
+  
+    
+   
   
     
   
