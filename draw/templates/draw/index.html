@@ -9,15 +9,17 @@
     <link rel="stylesheet" type="text/css" href="{% static 'draw/vendor/bootstrap/css/bootstrap.min.css' %}">
     <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
-
+    <script type="text/javascript" src="{% static 'draw/vendor/hammer/hammer.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'draw/vendor/hammer/jquery.hammer.js' %}"></script>
+    <script type="text/javascript" src="{% static 'draw/vendor/jquery-ui/jquery-ui.min.js' %}"></script>
     <style type="text/css">
         #container {
             text-align: center;
         }
         
         #myCanvas {
-            margin-top: 100px;
-            height: 750px;
+            margin-top: 100px; 
+            height: 750px; 
             width: 750px;
             border: 1px solid blue;
         }  
@@ -32,10 +34,55 @@
         <div id = "box" style = "background-color:blue; width:100px; height:100px; position:absolute; top:10px;">
 
     </div>
-    <p id="msg"></p>
+    <div id="pinchzoom">
+        <img id="img" src="http://pr.bdimg.com/static/princess/img/misc/baidu_logo_c352a179.gif" ondragstart="return false" alt="" />
+    </div>
 </body>
 <script>
+    var hammertime = Hammer(document.getElementById('pinchzoom'),{
+        transform_always_block:true,
+        transform_min_scale:0.5,
+        drag_block_horizontal:true,
+        drag_block_vertical:true,
+        drag_min_distance:0
+    });
 
+    var img = document.getElementById('img');
+    //初始值
+    var posX = 0,
+        posY = 0,
+        last_posX,
+        last_posY,
+        scale = 1,
+        last_scale,
+        rotation = 0,
+        last_rotation;
+
+    hammertime.on('touch drag transform',function(e){
+        switch(e.type){
+            //当touch开始时，记录下当前的缩放量，旋转量和位移量
+            case 'touch':
+                last_scale = scale;
+                last_rotation = rotation;
+                last_posX = posX;
+                last_posY = posY;
+                break;
+            //拖拽时改变位移量
+            case 'drag':
+                posX = last_posX + e.gesture.deltaX;
+                posY = last_posY + e.gesture.deltaY;
+                break;
+            case 'transform':
+                rotation = last_rotation + e.gesture.rotation;
+                scale = Math.min(last_scale* e.gesture.scale,10);
+                break;
+        }
+        //使用CSS3 transform进行图片的变换
+        var transform = "translate3d("+posX+"px,"+posY+"px,0)"+"scale3d("+scale+","+scale+",1)"+"rotate("+rotation+"deg)";
+        img.style.webkitTransform = transform;
+    })
+    
+    // Start
     // setting up the canvas and one paper tool
     var canvas = document.getElementById('myCanvas');
     paper.setup(canvas);
@@ -100,6 +147,10 @@
             var clientID = client.getID();
             this.users[clientID] = client;
         }
+        
+        cleanAll() {
+            this.users = {};
+        }
     }
     
     // Central System that keeps track of every Client
@@ -109,35 +160,45 @@
     var myColor = new paper.Color(Math.random(), Math.random(), Math.random());
     var myPath = new paper.Path();
     myPath.strokeColor = myColor;
-    
-    var mySelf = new Client(myID, myColor, myPath);
-    users.addUser(mySelf);
+
 
     // Add a point to path every time
     tool.onMouseMove = function(event) {
         myPath.add(event.point);
-        textItem.content = "Drawing Color: " + myPath.strokeColor;
         socket.send(JSON.stringify({userID: myID, userColor: myColor, x: event.point.x, y: event.point.y}));
     }
     
-    socket.onmessage = function(event) {
-        var msg = JSON.parse(event.data);
-        var userID = msg.userID;
-        var userColor = new paper.Color(msg.userColor[1], msg.userColor[2], msg.userColor[3]);
-        
-        if (!users.hasUser(userID)) {
-            var pathDraw = new paper.Path();
-            pathDraw.strokeColor = userColor;
-            pathDraw.add(new paper.Point(msg.x, msg.y)); 
-            users.addUser(new Client(userID, userColor, pathDraw));
-            
-//             textItem.content = "Receive Color 1-1: " + userColor + "\n" + "Receive Color 1-2: " + pathDraw.strokeColor;
-        }
-        else if (userID != myID) { // Avoid mySelf's path (duplicate)
-            users.addPointToClient(userID, msg.x, msg.y);
-//             textItem.content = "Receive Color 2-1: " + userColor + "\n" + "Receive Color 2-2: " + users.getUser(userID).getPath();
+    // Decompose URL 
+    function getParameterFromUrl(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    }
+    var screenSize = getParameterFromUrl('size');
+    
+    // Show every path only if '?size=large'
+    if (screenSize == 'large') {
+        socket.onmessage = function(event) {
+            var msg = JSON.parse(event.data);
+            var userID = msg.userID;
+            var userColor = new paper.Color(msg.userColor[1], msg.userColor[2], msg.userColor[3]);
+
+            if (!users.hasUser(userID)) {
+                var pathDraw = new paper.Path();
+                pathDraw.strokeColor = userColor;
+                pathDraw.add(new paper.Point(msg.x, msg.y)); 
+                users.addUser(new Client(userID, userColor, pathDraw));
+            }
+            else if (userID != myID) { // Avoid mySelf's path (duplicate)
+                users.addPointToClient(userID, msg.x, msg.y);
+            }
         }
     }
+    
     
     //exercise 2
     var sensitivity = 15;
@@ -150,50 +211,58 @@
         z1 = event.accelerationIncludingGravity.z;
     }, false);
 
-
+    //check if shake is supported or not.
+    if(!("ondevicemotion" in window)){alert("Not Supported");}
+    var largestChange = 0;
     setInterval(function () {
-        var change = Math.abs(x1-x2+y1-y2+z1-z2);
-
+        var change = Math.abs(x1-x2) + Math.abs(y1-y2) + Math.abs(z1-z2);
+        if (change > largestChange) {
+            largestChange = change;
+        }
+        
         if (change > sensitivity) {
-            const context = canvas.getContext('2d');
+            textItem.content = "Shake Detected: " + largestChange;
+            var context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            //context.fillStyle = "blue";
+          paper.project.activeLayer.removeChildren();
+          paper.view.draw();
+          //project.activeLayer.removeChildren();
+          //context.fillStyle = "rgb(0, 200, 0)";
+          
+         
+        
+  
+  
 
-             context.clearRect(0, 0, canvas.width, canvas.height);
+            // Clean all existed paths
+            users.cleanAll();
+            myPath = new paper.Path();
+            myPath.strokeColor = myColor;
         }
 
         // Update new position
         x2 = x1;
         y2 = y1;
         z2 = z1;
-    }, 150);
+    }, 15);
   
   
   
-      var x = 0;
-  if (window.DeviceOrientationEvent) {
-    window.addEventListener('deviceorientation', function(event) {
-      setInterval(function() {
-        x = event.gamma;
-        if (x > 0) {
-          document.getElementById("box").style.backgroundColor = "black";
-          alert('tilt');
-        }
-    }, 50);  
-     
-    }, false);
-} else {
-    console.log('This device does not support deviceorientation');
-}
+    var x = 0;
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', function(event) {
+          setInterval(function() {
+            x = event.gamma;
+            if (x > 50) {
+              document.getElementById("box").style.backgroundColor = "black";
+            }
+        }, 50);  
 
-  
-  
-  
-  
-    
-   
-  
-    
-  
-  
+        }, false);
+    } else {
+        console.log('This device does not support deviceorientation');
+    }
 
 
 </script>
