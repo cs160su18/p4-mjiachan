@@ -30,9 +30,10 @@
     <div id="container">
         <!-- You may change the dimensions of this canvas -->
         <canvas id="myCanvas"></canvas>
-      <!--exercise 2 change color -->
-        <div id = "box" style = "background-color:blue; width:100px; height:100px; position:absolute; top:10px;">
-
+      <!--exercise 2 change color; comment out for custom interaction -->
+        <!--<div id = "box" style = "background-color:blue; width:100px; height:100px; position:absolute; top:10px;"> -->
+      
+      
     </div>
     <div id="pinchzoom">
         <img id="img" src="http://pr.bdimg.com/static/princess/img/misc/baidu_logo_c352a179.gif" ondragstart="return false" alt="" />
@@ -92,8 +93,9 @@
     var url = window.location.href;
     var socket = new WebSocket('ws://p4-mjiachan-mjiachan854394.codeanyapp.com:8765/');
     
+    // comment out for custom interaction
     // Set BroadCast
-    var textItem = new paper.PointText(new paper.Point(20, 30));
+    /**var textItem = new paper.PointText(new paper.Point(20, 30));
     textItem.fillColor = 'black';
     textItem.content = 'Here is BroadCast Board';
     
@@ -262,7 +264,8 @@
         }, false);
     } else {
         console.log('This device does not support deviceorientation');
-    }
+    } */
+  
 
 
 </script>

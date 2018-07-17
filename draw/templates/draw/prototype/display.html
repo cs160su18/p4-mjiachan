@@ -1,0 +1,197 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>P4 Drawing</title>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'draw/vendor/bootstrap/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'draw/vendor/hammer/hammer.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'draw/vendor/hammer/jquery.hammer.js' %}"></script>
+    <script type="text/javascript" src="{% static 'draw/vendor/jquery-ui/jquery-ui.min.js' %}"></script>
+    <style type="text/css">
+        div {
+            border-radius: 10px;
+        }
+        
+        #container {
+            margin: 0 auto;
+            padding: 80px;
+        }
+        
+        .row {
+            margin: 20px auto;
+            margin-right: 20px;
+        }
+        
+        #display {
+            margin: 0 auto;
+            width: 80%;
+            height: 60%;
+            border: 1px solid red;
+        }
+        .section {
+            width: 100%;
+            height: 200px;
+            margin: 10px;
+            border: 1px solid blue;
+        }
+        
+        #infoSpace {
+            padding: 10px;
+        }
+        
+        .join {
+            position: absolute;
+            right: 25px;
+            bottom: 30px;
+        }
+        
+        
+    </style>
+
+</head>
+<body>
+    <div id=container>
+        <div id=display>
+            <!-- first row -->
+            <div class="row">
+                <div class="col">
+                    <div class=section>
+                        <div id=infoSpace>
+                            {% if event1 %}
+                                <span id=name1>{{ event1.name }}</span><br>
+                                <span id=time1>{{ event1.time }}</span>
+                                <button id=join1 type="button" class="btn btn-primary join">Join</button>
+                            {% else %}
+                                <span id=name1>No Event<span>
+                            {% endif %}
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class=section>
+                        <div id=infoSpace>
+                            {% if event2 %}
+                                <span id=name2>{{ event2.name }}</span><br>
+                                <span id=time2>{{ event2.time }}</span>
+                                <button id=join2 type="button" class="btn btn-primary join">Join</button>
+                            {% else %}
+                            <span id=name2>No Event</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- second row -->
+            <div class="row">
+                <div class="col">
+                    <div class=section>
+                        <div id=infoSpace>
+                            {% if event3 %}
+                                <span id=name3>{{ event3.name }}</span><br>
+                                <span id=time3>{{ event3.time }}</span>
+                                <button id=join3 type="button" class="btn btn-primary join">Join</button>
+                            {% else %}
+                            <span id=name3>No Event</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class=section>
+                        <div id=infoSpace>
+                            {% if event4 %}
+                                <span id=name4>{{ event4.name }}</span><br>
+                                <span id=time4>{{ event4.time }}</span>
+                                <button id=join4 type="button" class="btn btn-primary join">Join</button>
+                            {% else %}
+                            <span id=name4>No Event</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+//     window.onload = setInfo();
+//     function setInfo() {
+//         var names = [];
+//         names.push($('#name1'));
+//         names.push($('#name2'));
+//         names.push($('#name3'));
+//         names.push($('#name4'));
+
+//         for (var i = 0; i < names.length; i++) {
+//             var name = names[i];
+//             name.append("NAME " + i+1);
+//         }
+
+//         var times = []
+//         times.push($('#time1'));
+//         times.push($('#time2'));
+//         times.push($('#time3'));
+//         times.push($('#time4'));
+
+//         for (var i = 0; i < times.length; i++) {
+//             var time = times[i];
+//             time.append("TIME " + i+1);
+//         }
+        
+//         var buttons = []
+//         buttons.push($('#join1'));
+//         buttons.push($('#join2'));
+//         buttons.push($('#join3'));
+//         buttons.push($('#join4'));
+        
+//         function clickOn(index) {
+//             function respond() {
+//                 alert("Click on " + index);
+//             }
+//             return respond;
+//         }
+
+//         for (var i = 0; i < buttons.length; i++) {
+//             var button = buttons[i];
+//             button.on("click", clickOn(i));
+//         }
+        
+        
+
+    }
+</script>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- END -->
